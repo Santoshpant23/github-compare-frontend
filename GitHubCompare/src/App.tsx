@@ -36,47 +36,72 @@ export default function App() {
     }
   }, [loading])
 
+
+  function popAlert(msg:string){
+    const alertDiv = document.createElement('div')
+    alertDiv.innerHTML = `
+      <div class="fixed top-4 right-4 w-96 bg-red-500/90 text-white p-4 rounded-xl shadow-lg backdrop-blur-sm border border-red-400 transform transition-all animate-fade-in">
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h3 class="font-bold">Oops! Something went wrong</h3>
+            <p class="text-sm">${msg}</p>
+          </div>
+        </div>
+      </div>
+    `
+    document.body.appendChild(alertDiv)
+
+    setTimeout(() => {
+      alertDiv.children[0].classList.add('opacity-0')
+      setTimeout(() => alertDiv.remove(), 300)
+    }, 5000)
+
+  }
   async function handleCompare() {
     if (user1.length < 2 || user2.length < 2) {
-      alert('Please enter valid usernames for both users')
+      popAlert("Please enter valid usernames for both users")
       return
     }
 
     setLoading(true)
     setAns('')
-    let accumulatedHtml = ''
     
     try {
-      const response = await fetch('http://localhost:3001/compare-users', {
+      const response = await fetch('https://sturl.live/backend/githubcompare/compare-users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user1, user2 })
       })
 
-      const reader = response.body?.getReader()
-      if (!reader) return
+      const data = await response.json();
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        
-        const chunk = new TextDecoder().decode(value)
-        const lines = chunk.split('\n')
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.content) {
-                accumulatedHtml += data.content
-                setAns(accumulatedHtml)
-              }
-            } catch (e) {
-              console.error('Parse error:', e)
-            }
-          }
-        }
+      if(!data.success){
+          setLoading(false);
+
+        popAlert(data.message);
+
+          setAns("Cannot Fetch Repos, something went wrong");
+
+
+      } else{
+        setLoading(false);
+        // Assuming `data.roast` contains the raw string with triple backticks
+let rawRoast = data.roast;
+
+// Remove the first and last lines (triple backticks)
+let cleanedRoast = rawRoast
+  .split('\n') // Split the string into an array of lines
+  .slice(1, -1) // Remove the first and last lines
+  .join('\n'); // Join the remaining lines back into a single string
+
+// Set the cleaned HTML content to your frontend element
+setAns(cleanedRoast);
       }
+
+     
     } catch (error) {
       console.error('Stream error:', error)
       setAns('Failed to roast. The developers are being roasted instead. 🔥')
@@ -152,7 +177,7 @@ export default function App() {
 
           {ans && (
             <div className="mt-8 transform transition-all duration-500 animate-fade-in">
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/20">
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-purple-500/20 text-white">
                 <div 
                   className="prose prose-invert max-w-none text-lg font-mono leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: ans }}
