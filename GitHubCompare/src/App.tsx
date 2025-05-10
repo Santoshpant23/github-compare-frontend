@@ -70,7 +70,7 @@ export default function App() {
     setAns('')
     
     try {
-      const response = await fetch('https://sturl.live/backend/githubcompare/compare-users', {
+      const response = await fetch('https://projects.santosh.codes/github-compare/compare-users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user1, user2 })
@@ -80,7 +80,7 @@ export default function App() {
 
       if(!data.success){
           setLoading(false);
-
+        console.log(JSON.stringify(data))
         popAlert(data.message);
 
           setAns("Cannot Fetch Repos, something went wrong");
